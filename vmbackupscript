@@ -1,0 +1,12 @@
+#!/bin/bash
+VM_PATH="/vmfs/volumes/datastore_name/vm_name/"
+BACKUP_PATH="/path/to/backup/"
+
+# Create snapshot
+vim-cmd vmsvc/snapshot.create VMID "BackupSnapshot" "Automated backup snapshot"
+
+# Copy files
+rsync -avz $VM_PATH $BACKUP_PATH
+
+# Remove snapshot
+vim-cmd vmsvc/snapshot.removeall VMID
