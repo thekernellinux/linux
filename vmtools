@@ -1,0 +1,1 @@
+scp -r /vmfs/volumes/datastore_name/vm_name/ root@destination-esxi-host:/vmfs/volumes/datastore_name/vm_name/
