@@ -1,0 +1,104 @@
+# Log actions
+function Log-Action {
+    $message = "$((Get-Date).ToString('yyyy-MM-dd HH:mm:ss')) - $args"
+    Write-Output $message | Out-File -Append -FilePath "C:\SecurityLogs\server_security.log"
+}
+
+# Create log directory if it doesn't exist
+if (-Not (Test-Path -Path "C:\SecurityLogs")) {
+    New-Item -Path "C:\SecurityLogs" -ItemType Directory
+}
+
+# Enable Windows Firewall
+Log-Action "Enabling Windows Firewall..."
+Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True
+
+# Configure Windows Firewall Rules
+Log-Action "Configuring Windows Firewall Rules..."
+# Allow RDP (default port 3389)
+New-NetFirewallRule -DisplayName "Allow RDP" -Direction Inbound -Protocol TCP -LocalPort 3389 -Action Allow
+
+# Allow necessary ICMP (ping)
+New-NetFirewallRule -DisplayName "Allow ICMPv4-In" -Protocol ICMPv4 -IcmpType 8 -Action Allow
+
+# Deny all other inbound connections by default
+Set-NetFirewallProfile -Profile Domain,Public,Private -DefaultInboundAction Block
+Set-NetFirewallProfile -Profile Domain,Public,Private -DefaultOutboundAction Allow
+
+# Install Windows Defender if not installed
+Log-Action "Checking for Windows Defender..."
+if (-Not (Get-WindowsFeature -Name Windows-Defender-Features).Installed) {
+    Install-WindowsFeature -Name Windows-Defender-Features
+    Log-Action "Windows Defender installed."
+} else {
+    Log-Action "Windows Defender already installed."
+}
+
+# Update Windows Defender
+Log-Action "Updating Windows Defender..."
+Update-MpSignature
+
+# Configure Windows Defender
+Log-Action "Configuring Windows Defender..."
+Set-MpPreference -DisableRealtimeMonitoring $false
+Set-MpPreference -DisableBehaviorMonitoring $false
+Set-MpPreference -DisableBlockAtFirstSeen $false
+
+# Secure RDP
+Log-Action "Securing RDP..."
+# Change RDP port
+$NewRDPPort = 3390
+Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp\" -Name "PortNumber" -Value $NewRDPPort
+New-NetFirewallRule -DisplayName "Allow RDP on port $NewRDPPort" -Direction Inbound -Protocol TCP -LocalPort $NewRDPPort -Action Allow
+
+# Enable NLA for RDP
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "UserAuthentication" -Value 1
+
+# Enable and configure basic auditing
+Log-Action "Enabling and configuring basic auditing..."
+AuditPol /Set /Category:"Logon/Logoff" /Success:Enable /Failure:Enable
+AuditPol /Set /Category:"Account Logon" /Success:Enable /Failure:Enable
+
+# Enforce Password Policy
+Log-Action "Enforcing Password Policy..."
+secedit /configure /db secedit.sdb /cfg C:\Windows\security\templates\PasswordPolicy.inf
+
+# Password Policy Settings
+$PasswordPolicy = @"
+[System Access]
+MinimumPasswordAge = 1
+MaximumPasswordAge = 30
+MinimumPasswordLength = 12
+PasswordComplexity = 1
+PasswordHistorySize = 24
+"@
+Set-Content -Path "C:\Windows\security\templates\PasswordPolicy.inf" -Value $PasswordPolicy
+
+# Apply Password Policy
+secedit /configure /db secedit.sdb /cfg C:\Windows\security\templates\PasswordPolicy.inf /overwrite
+
+# Disable Guest Account
+Log-Action "Disabling Guest Account..."
+Get-LocalUser -Name "Guest" | Disable-LocalUser
+
+# Rename Administrator Account
+Log-Action "Renaming Administrator Account..."
+Rename-LocalUser -Name "Administrator" -NewName "SecureAdmin"
+
+# Configure Account Lockout Policy
+Log-Action "Configuring Account Lockout Policy..."
+$AccountLockoutPolicy = @"
+[Account Lockout Policy]
+LockoutBadCount = 5
+LockoutDuration = 15
+LockoutObservationWindow = 15
+"@
+Set-Content -Path "C:\Windows\security\templates\AccountLockoutPolicy.inf" -Value $AccountLockoutPolicy
+
+# Apply Account Lockout Policy
+secedit /configure /db secedit.sdb /cfg C:\Windows\security\templates\AccountLockoutPolicy.inf /overwrite
+
+Log-Action "Account security measures applied successfully."
+
+# End of script
+Log-Action "Script execution completed."
