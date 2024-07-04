@@ -19,7 +19,6 @@ apt install -y \
     cmatrix \          # Terminal-based "Matrix" screensaver
     terminator \       # Terminal emulator with useful features
     nload \            # Real-time network traffic monitor
-    nethogs            # Net top tool grouping bandwidth per process
 
 # Print completion message
 echo "Installation completed."
