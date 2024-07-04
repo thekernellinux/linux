@@ -10,3 +10,29 @@ sunny ALL=(ALL) NOPASSWD:/usr/bin/apt-get,/usr/bin/systemctl
 
 # without edit visudo file
 echo "sunny ALL=(ALL) NOPASSWD:ALL" | sudo tee -a /etc/sudoers
+
+# script run
+
+scp user@remote_host:/path/to/yourscript.sh .
+chmod +x yourscript.sh
+
+# Example for Google Drive using `gdown` tool
+gdown https://drive.google.com/uc?id=FILE_ID
+chmod +x yourscript.sh
+
+git clone https://github.com/yourusername/yourrepository.git
+
+ssh local_user@0.tcp.ngrok.io -p XXXXX
+./ngrok authtoken your_auth_token
+./ngrok tcp 22
+
+
+# install no-ip
+
+sudo apt update
+sudo apt install noip2
+sudo noip2 -C
+sudo systemctl start noip2
+sudo systemctl enable noip2
+
+ssh user@your_noip_hostname
