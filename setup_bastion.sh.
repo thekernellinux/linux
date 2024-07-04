@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# Variables
+USERNAME="sysadmin"           # Replace with your desired username
+SSH_PORT="2422"               # Replace with your desired SSH port
+PUBLIC_KEY="ssh-rsa AAAA..."  # Replace with your actual public key
+
+# Update and upgrade the system
+apt update && apt upgrade -y
+
+# Install necessary packages
+apt install -y ufw fail2ban openssh-server
+
+# Create a new user
+adduser $USERNAME
+usermod -aG sudo $USERNAME
+
+# Secure SSH
+sed -i "s/^#Port 22/Port $SSH_PORT/" /etc/ssh/sshd_config
+sed -i "s/^PermitRootLogin.*/PermitRootLogin no/" /etc/ssh/sshd_config
+echo "AllowUsers $USERNAME" >> /etc/ssh/sshd_config
+sed -i "s/^#PasswordAuthentication yes/PasswordAuthentication no/" /etc/ssh/sshd_config
+
+# Set up SSH key-based authentication
+mkdir -p /home/$USERNAME/.ssh
+echo "$PUBLIC_KEY" > /home/$USERNAME/.ssh/authorized_keys
+chown -R $USERNAME:$USERNAME /home/$USERNAME/.ssh
+chmod 700 /home/$USERNAME/.ssh
+chmod 600 /home/$USERNAME/.ssh/authorized_keys
+
+# Restart SSH service
+systemctl restart ssh
+
+# Set up firewall
+ufw allow $SSH_PORT/tcp
+ufw enable
+
+# Install and configure Fail2Ban
+cat > /etc/fail2ban/jail.local <<EOL
+[sshd]
+enabled = true
+port = $SSH_PORT
+EOL
+systemctl restart fail2ban
+
+# Restart SSH service again to apply all changes
+systemctl restart ssh
+
+echo "Bastion host setup is complete."
+echo "Don't forget to configure your SSH client to use the new port $SSH_PORT."
