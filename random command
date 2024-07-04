@@ -36,3 +36,28 @@ sudo systemctl start noip2
 sudo systemctl enable noip2
 
 ssh user@your_noip_hostname
+
+# check running service
+sudo systemctl list-units --type=service --state=running
+sudo systemctl list-units --type=service --state=running
+sudo systemctl list-units --type=service --state=running --no-pager
+
+
+sudo dnf install openssh-server
+
+sudo firewall-cmd --zone=public --add-source=<ip_address> --permanent
+sudo firewall-cmd --zone=public --add-port=<port_number>/tcp --permanent
+sudo firewall-cmd --reload
+
+
+# rsync
+sudo rsync -avz /source_directory /backup_destination
+
+# Network Command
+ip addr show
+ip route show
+ss -tuln
+ss -tunapl
+sudo ip addr add <ip_address>/<subnet_mask> dev <interface>
+sudo ip link set <interface> up
+netstat -i
