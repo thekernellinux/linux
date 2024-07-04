@@ -1,0 +1,12 @@
+# visudo
+
+sudo cp /etc/sudoers /etc/sudoers.bak
+
+sunny ALL=(ALL) NOPASSWD:ALL
+
+sunny ALL=(ALL) NOPASSWD:/usr/bin/apt-get,/usr/bin/systemctl
+
+%admin ALL=(ALL) NOPASSWD:ALL
+
+# without edit visudo file
+echo "sunny ALL=(ALL) NOPASSWD:ALL" | sudo tee -a /etc/sudoers
